@@ -1,0 +1,33 @@
+graph TD
+    A["👤 USER INPUT<br/>'I want upbeat lo-fi beats'"] -->|Natural Language| B["🤖 CLAUDE AGENT<br/>Orchestrator"]
+
+    B -->|Extract Preferences| C["🎯 Preference Extractor<br/>mood, energy, vibe"]
+    B -->|Query & Retrieve| D["🔍 Spotify API<br/>Fetch real songs"]
+    B -->|Score Songs| E["⭐ Recommender<br/>6-component algorithm"]
+    B -->|Explain Results| F["💬 Explanation<br/>Generate 'why'"]
+
+    C --> G["📊 RANKED RECOMMENDATIONS<br/>Top 5 songs + scores + reasons"]
+    D --> G
+    E --> G
+    F --> G
+
+    G --> H["👤 USER SEES RESULTS<br/>Reviews & decides"]
+    H -->|Feedback: Refine| B
+    H -->|Accept| I["🧪 EVALUATOR<br/>Validate quality"]
+
+    I -->|Ground Truth| J["✅ Validation<br/>Does it match taste?"]
+    I -->|Consistency| K["✅ Consistency<br/>Same input = same top?"]
+    I -->|Guardrails| L["✅ Safety<br/>No hallucinations"]
+
+    style A fill:#e8f5e9,stroke:#4caf50
+    style B fill:#ffd700,stroke:#ff9800
+    style C fill:#f0f4ff,stroke:#667eea
+    style D fill:#f0f4ff,stroke:#667eea
+    style E fill:#f0f4ff,stroke:#667eea
+    style F fill:#f0f4ff,stroke:#667eea
+    style G fill:#f0f4ff,stroke:#667eea
+    style H fill:#e8f5e9,stroke:#4caf50
+    style I fill:#ffebee,stroke:#f44336
+    style J fill:#ffebee,stroke:#f44336
+    style K fill:#ffebee,stroke:#f44336
+    style L fill:#ffebee,stroke:#f44336
