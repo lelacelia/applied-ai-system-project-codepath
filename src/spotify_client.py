@@ -103,24 +103,30 @@ class SpotifyRetriever:
                 self.use_dataset = False
 
         if not use_dataset or not self.db:
-            # Fall back to Spotify API
+            # Fall back to Spotify API (only if requested and database unavailable)
             client_id = os.getenv('SPOTIFY_CLIENT_ID')
             client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
 
-            if not client_id or not client_secret:
+            # Only raise error if user explicitly requested API mode but credentials missing
+            if not use_dataset and (not client_id or not client_secret):
                 raise ValueError(
                     "Spotify credentials missing! Check your .env file:\n"
                     "  SPOTIFY_CLIENT_ID=...\n"
                     "  SPOTIFY_CLIENT_SECRET=..."
                 )
 
-            auth_manager = SpotifyClientCredentials(
-                client_id=client_id,
-                client_secret=client_secret
-            )
-            self.sp = spotipy.Spotify(auth_manager=auth_manager)
-            self.use_dataset = False
-            print("✅ Spotify API client initialized successfully")
+            # If credentials exist, initialize API client
+            if client_id and client_secret:
+                auth_manager = SpotifyClientCredentials(
+                    client_id=client_id,
+                    client_secret=client_secret
+                )
+                self.sp = spotipy.Spotify(auth_manager=auth_manager)
+                self.use_dataset = False
+                print("✅ Spotify API client initialized successfully")
+            else:
+                print("⚠️  Spotify API unavailable (credentials missing). Using dataset mode only.")
+                self.use_dataset = True
 
     def search_songs(self, query: str, limit: int = 50, min_popularity: int = 0) -> list:
         """
@@ -357,25 +363,34 @@ class SpotifyRetriever:
         """
         # Extract mood from query or use context_mood from agent
         # e.g., "sad pop" → mood="sad", genre="pop"
-        query_parts = query.lower().split()
-        mood_keywords = []
-        genre_keywords = []
+        # Also handle artist: prefix (e.g., "artist:Taylor Swift")
+        query_lower = query.lower()
 
-        mood_map = {
-            'sad': 'sad', 'sadder': 'sad', 'depressing': 'sad',
-            'energetic': 'energetic', 'upbeat': 'energetic', 'party': 'energetic',
-            'chill': 'chill', 'relaxed': 'chill', 'lofi': 'chill', 'lo-fi': 'chill',
-        }
+        # Preserve artist: prefix if present
+        if query_lower.startswith("artist:"):
+            # Keep artist search as-is
+            genre_query = query
+            target_mood = context_mood or 'neutral'
+        else:
+            query_parts = query_lower.split()
+            mood_keywords = []
+            genre_keywords = []
 
-        for part in query_parts:
-            if part in mood_map:
-                mood_keywords.append(mood_map[part])
-            else:
-                genre_keywords.append(part)
+            mood_map = {
+                'sad': 'sad', 'sadder': 'sad', 'depressing': 'sad',
+                'energetic': 'energetic', 'upbeat': 'energetic', 'party': 'energetic',
+                'chill': 'chill', 'relaxed': 'chill', 'lofi': 'chill', 'lo-fi': 'chill',
+            }
 
-        # Determine target mood (priority: query > agent context > default to neutral)
-        target_mood = mood_keywords[0] if mood_keywords else (context_mood or 'neutral')
-        genre_query = ' '.join(genre_keywords) if genre_keywords else 'pop'
+            for part in query_parts:
+                if part in mood_map:
+                    mood_keywords.append(mood_map[part])
+                else:
+                    genre_keywords.append(part)
+
+            # Determine target mood (priority: query > agent context > default to neutral)
+            target_mood = mood_keywords[0] if mood_keywords else (context_mood or 'neutral')
+            genre_query = ' '.join(genre_keywords) if genre_keywords else 'pop'
 
         # Use MOOD-AWARE search (uses pre-calculated mood scores)
         results = self.db.search_by_mood(genre_query, target_mood, limit=limit)
