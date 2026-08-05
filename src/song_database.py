@@ -110,22 +110,29 @@ class SongDatabase:
             return []
 
         query_lower = query.lower()
-        parts = query_lower.split()
         matches = []
 
-        # Search: any word matching title, artist, or genre
-        for song in self.songs:
-            song_title = song['title'].lower()
-            song_artist = song['artist'].lower()
-            song_genre = song['genre'].lower()
-
-            # Check if ANY query part matches ANY field
-            for part in parts:
-                if (part in song_title or
-                    part in song_artist or
-                    part in song_genre):
+        # Handle artist: prefix (e.g., "artist:Taylor Swift")
+        if query_lower.startswith("artist:"):
+            artist_name = query_lower.replace("artist:", "").strip()
+            for song in self.songs:
+                if artist_name in song['artist'].lower():
                     matches.append(song)
-                    break  # Don't add duplicate if multiple parts match
+        else:
+            # Regular search: any word matching title, artist, or genre
+            parts = query_lower.split()
+            for song in self.songs:
+                song_title = song['title'].lower()
+                song_artist = song['artist'].lower()
+                song_genre = song['genre'].lower()
+
+                # Check if ANY query part matches ANY field
+                for part in parts:
+                    if (part in song_title or
+                        part in song_artist or
+                        part in song_genre):
+                        matches.append(song)
+                        break  # Don't add duplicate if multiple parts match
 
         # If no results, return random sample from database
         if not matches:
