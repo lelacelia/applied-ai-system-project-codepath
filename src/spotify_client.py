@@ -366,10 +366,10 @@ class SpotifyRetriever:
         # Also handle artist: prefix (e.g., "artist:Taylor Swift")
         query_lower = query.lower()
 
-        # Preserve artist: prefix if present
+        # Handle artist: prefix if present
         if query_lower.startswith("artist:"):
-            # Keep artist search as-is
-            genre_query = query
+            # Strip "artist:" prefix and keep the artist name
+            genre_query = query[7:]  # Remove "artist:" (7 chars)
             target_mood = context_mood or 'neutral'
         else:
             query_parts = query_lower.split()
